@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GalaxyTube</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #000;
+        color: #fff;
+        font-family: system-ui, sans-serif;
+    }
+
+    /* MOVING GALAXY BACKGROUND */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url('https://hdwallpaperim.com/wp-content/uploads/2017/08/25/462707-universe-galaxy-space-stars.jpg') center/cover no-repeat;
+        filter: brightness(0.35) blur(2px);
+        animation: galaxyMove 40s linear infinite;
+        z-index: -1;
+    }
+
+    @keyframes galaxyMove {
+        0% { transform: scale(1) translate(0,0); }
+        50% { transform: scale(1.1) translate(20px,20px); }
+        100% { transform: scale(1) translate(0,0); }
+    }
+
+    #app {
+        display: flex;
+        height: 100vh;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+        width: 190px;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(8px);
+        padding-top: 10px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    #sidebar h1 {
+        font-size: 20px;
+        margin: 0 0 10px 16px;
+        color: #7df9ff;
+        text-shadow: 0 0 10px #7df9ff;
+    }
+
+    .sideItem {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #ddd;
+        transition: 0.2s;
+    }
+
+    .sideItem:hover {
+        background: rgba(125, 249, 255, 0.15);
+        box-shadow: inset 0 0 12px rgba(125, 249, 255, 0.4);
+    }
+
+    .sideItem.active {
+        background: rgba(255,255,255,0.15);
+        font-weight: 600;
+    }
+
+    .sideIcon {
+        width: 20px;
+        text-align: center;
+    }
+
+    /* MAIN AREA */
+    #main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #topBar {
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(8px);
+        flex-shrink: 0;
+    }
+
+    #searchBar {
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid #333;
+        background: rgba(0,0,0,0.5);
+        color: #fff;
+        width: 220px;
+        font-size: 12px;
+    }
+
+    #userLabel {
+        font-size: 12px;
+        color: #aaa;
+    }
+
+    /* FEED — HARD SNAP SCROLLING */
+    #feed {
+        flex: 1;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+    }
+
+    #feed::-webkit-scrollbar {
+        width: 0;
+    }
+
+    .videoCard {
+        scroll-snap-align: start;
+        min-height: 220vh;
+        padding: 32px 32px 64px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .videoWrapper {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid rgba(125, 249, 255, 0.4);
+        box-shadow: 0 0 25px rgba(125, 249, 255, 0.3);
+    }
+
+    .videoWrapper video {
+        width: 100%;
+        height: auto;
+        max-height: 180vh;
+        object-fit: cover;
+        background: #000;
+        display: block;
+    }
+
+    .info {
+        max-width: 1100px;
+        margin: 20px auto 0;
+        padding: 20px 8px 0 8px;
+    }
+
+    .creatorName {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .caption {
+        font-size: 16px;
+        color: #ccc;
+        line-height: 1.5;
+    }
+
+    .metaRow {
+        margin-top: 6px;
+        font-size: 14px;
+        color: #aaa;
+    }
+
+    .actions {
+        position: absolute;
+        right: 60px;
+        top: 60px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .actionBtn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.18);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        font-size: 28px;
+    }
+
+    .creatorAvatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #fff, #7df9ff, #ff2e63);
+        border: 2px solid #fff;
+    }
+
+    .subscribeBtn {
+        margin-top: 10px;
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        cursor: pointer;
+        border: 1px solid #7df9ff;
+        color: #7df9ff;
+        background: rgba(0,0,0,0.6);
+    }
+
+    .subscribeBtn.subscribed {
+        background: #7df9ff;
+        color: #000;
+    }
+
+    .pauseOverlay {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.7);
+        border: 3px solid #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 48px;
+        color: #fff;
+        cursor: pointer;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
+    }
+
+    #authOverlay, #uploadOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 40;
+        display: none;
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    #authOverlay input, #uploadOverlay input, #uploadOverlay textarea {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: #050505;
+        color: #fff;
+    }
+
+    #authOverlay button, #uploadOverlay button {
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        margin-right: 8px;
+    }
+
+    #authLogin { background: #7df9ff; }
+    #authCreate { background: #333; color: #eee; }
+
+    #uploadSubmit { background: #7df9ff; }
+    #uploadCancel { background: #333; color: #eee; }
+
+    .placeholder {
+        text-align: center;
+        color: #ccc;
+        font-size: 18px;
+        padding: 20px;
+    }
+
+    .commentRow {
+        margin-top: 10px;
+        font-size: 15px;
+        color: #ccc;
+    }
+
+    /* NOW PLAYING BAR */
+    #nowPlayingBar {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        background: rgba(0,0,0,0.7);
+        border: 1px solid #7df9ff;
+        border-radius: 999px;
+        color: #7df9ff;
+        font-size: 14px;
+        box-shadow: 0 0 15px rgba(125, 249, 255, 0.4);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 50;
+    }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <div id="sidebar">
+        <h1>GalaxyTube</h1>
+        <div class="sideItem active" data-view="home"><div class="sideIcon">🏠</div><div>Home</div></div>
+        <div class="sideItem" data-view="subs"><div class="sideIcon">🔔</div><div>Subscriptions</div></div>
+        <div class="sideItem" data-view="channel"><div class="sideIcon">👤</div><div>Your Channel</div></div>
+        <div class="sideItem" data-view="upload"><div class="sideIcon">⬆️</div><div>Upload</div></div>
+        <div class="sideItem" data-view="logout"><div class="sideIcon">🚪</div><div>Log Out</div></div>
+    </div>
+
+    <div id="main">
+        <div id="topBar">
+            <input id="searchBar" placeholder="Search...">
+            <span id="userLabel"></span>
+        </div>
+        <div id="feed"></div>
+    </div>
+</div>
+
+<div id="authOverlay">
+    <h2>Sign in to GalaxyTube</h2>
+    <input id="authUser" placeholder="Username">
+    <input id="authPass" type="password" placeholder="Password">
+    <div>
+        <button id="authLogin">Sign In</button>
+        <button id="authCreate">Create Account</button>
+    </div>
+</div>
+
+<div id="uploadOverlay">
+    <h2>Upload to GalaxyTube</h2>
+    <input id="uploadFile" type="file" accept="video/*">
+    <textarea id="uploadCaption" placeholder="Caption"></textarea>
+    <div>
+        <button id="uploadSubmit">Add to feed</button>
+        <button id="uploadCancel">Cancel</button>
+    </div>
+</div>
+
+<div id="nowPlayingBar">Now Playing</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- Tiny DOM helper ---------- */
+  // el(tag, props?, ...children) — props can include style{}, dataset{}, on{event:fn}, class, attrs
+  function el(tag, props, ...children) {
+    const node = document.createElement(tag);
+    if (props) {
+      for (const [key, value] of Object.entries(props)) {
+        if (value == null || value === false) continue;
+        if (key === "class") node.className = value;
+        else if (key === "style" && typeof value === "object") Object.assign(node.style, value);
+        else if (key === "dataset") Object.assign(node.dataset, value);
+        else if (key === "on") {
+          for (const [evt, fn] of Object.entries(value)) node.addEventListener(evt, fn);
+        } else if (key === "text") node.textContent = value;
+        else if (key in node) node[key] = value;
+        else node.setAttribute(key, value);
+      }
+    }
+    for (const child of children.flat()) {
+      if (child == null) continue;
+      node.append(child.nodeType ? child : document.createTextNode(String(child)));
+    }
+    return node;
+  }
+
+  /* ---------- Storage helpers ---------- */
+  const store = {
+    get(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+      catch { return fallback; }
+    },
+    set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
+    raw(key) { return localStorage.getItem(key); },
+  };
+
+  const KEYS = {
+    videos: "gx_videos",
+    user: "gx_logged_in",
+    subs: "gx_subs",
+    cred: (u) => "gx_user_" + u,
+  };
+
+  /* ---------- App state ---------- */
+  const state = {
+    videos: store.get(KEYS.videos, []),
+    currentUser: store.raw(KEYS.user),
+    subscriptions: new Set(store.get(KEYS.subs, [])),
+    view: "home",
+    currentPlaying: null,
+  };
+
+  // Normalize any legacy records so every video has the expected shape.
+  state.videos.forEach((v) => {
+    if (typeof v.likes !== "number") v.likes = 0;
+    if (!("likedBy" in v)) v.likedBy = null;
+    if (!("dislikedBy" in v)) v.dislikedBy = null;
+    if (!Array.isArray(v.comments)) v.comments = [];
+  });
+
+  /* ---------- Cached DOM ---------- */
+  const dom = {
+    feed: document.getElementById("feed"),
+    authOverlay: document.getElementById("authOverlay"),
+    uploadOverlay: document.getElementById("uploadOverlay"),
+    searchBar: document.getElementById("searchBar"),
+    userLabel: document.getElementById("userLabel"),
+    authUser: document.getElementById("authUser"),
+    authPass: document.getElementById("authPass"),
+    uploadFile: document.getElementById("uploadFile"),
+    uploadCaption: document.getElementById("uploadCaption"),
+    nowPlayingBar: document.getElementById("nowPlayingBar"),
+  };
+
+  /* ---------- Persistence ---------- */
+  const persistVideos = () => store.set(KEYS.videos, state.videos);
+  const persistSubs = () => store.set(KEYS.subs, [...state.subscriptions]);
+
+  const isSubscribed = (creator) => state.subscriptions.has(creator);
+  function toggleSubscription(creator) {
+    if (!state.currentUser) return;
+    state.subscriptions.has(creator)
+      ? state.subscriptions.delete(creator)
+      : state.subscriptions.add(creator);
+    persistSubs();
+  }
+
+  function updateUserLabel() {
+    dom.userLabel.textContent = state.currentUser ? "@" + state.currentUser : "Not logged in";
+  }
+
+  /* ---------- Filtering ---------- */
+  function getFilteredVideos() {
+    const q = dom.searchBar.value.trim().toLowerCase();
+    let list = state.videos.slice();
+
+    if (state.view === "subs") list = list.filter((v) => isSubscribed(v.creator));
+    else if (state.view === "channel" && state.currentUser) list = list.filter((v) => v.creator === state.currentUser);
+
+    if (q) {
+      list = list.filter(
+        (v) => v.creator.toLowerCase().includes(q) || v.caption.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  /* ---------- Playback ---------- */
+  let nowPlayingTimer = null;
+  function showNowPlaying() {
+    dom.nowPlayingBar.style.opacity = 1;
+    clearTimeout(nowPlayingTimer);
+    nowPlayingTimer = setTimeout(() => (dom.nowPlayingBar.style.opacity = 0), 2000);
+  }
+
+  function stopAllVideos() {
+    dom.feed.querySelectorAll("video").forEach((v) => v.pause());
+    dom.feed.querySelectorAll(".pauseOverlay").forEach((o) => (o.style.display = "none"));
+    state.currentPlaying = null;
+  }
+
+  function play(videoEl) {
+    if (!videoEl) return;
+    stopAllVideos();
+    videoEl.play().catch(() => {});
+    state.currentPlaying = videoEl;
+    showNowPlaying();
+  }
+
+  /* ---------- Scroll snap ---------- */
+  let snapTimer = null;
+  function snapToNearestCard() {
+    const cards = [...dom.feed.querySelectorAll(".videoCard")];
+    if (!cards.length) return;
+    const top = dom.feed.getBoundingClientRect().top;
+    let best = cards[0];
+    let bestDist = Math.abs(best.getBoundingClientRect().top - top);
+    for (let i = 1; i < cards.length; i++) {
+      const d = Math.abs(cards[i].getBoundingClientRect().top - top);
+      if (d < bestDist) { best = cards[i]; bestDist = d; }
+    }
+    best.scrollIntoView({ behavior: "smooth", block: "start" });
+    play(best.querySelector("video"));
+  }
+
+  dom.feed.addEventListener("scroll", () => {
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(snapToNearestCard, 120);
+  });
+
+  /* ---------- Like / dislike (mutually exclusive, YouTube-style) ---------- */
+  function setReaction(v, which, upIcon, downIcon, metaDiv) {
+    const user = state.currentUser;
+    const wasLiked = v.likedBy === user;
+    const wasDisliked = v.dislikedBy === user;
+
+    if (which === "like") {
+      if (wasLiked) { v.likedBy = null; v.likes = Math.max(0, v.likes - 1); }
+      else {
+        if (wasDisliked) v.dislikedBy = null;
+        v.likedBy = user;
+        v.likes += 1;
+      }
+    } else {
+      if (wasDisliked) { v.dislikedBy = null; }
+      else {
+        if (wasLiked) { v.likedBy = null; v.likes = Math.max(0, v.likes - 1); }
+        v.dislikedBy = user;
+      }
+    }
+
+    upIcon.style.color = v.likedBy === user ? "#4caf50" : "#fff";
+    downIcon.style.color = v.dislikedBy === user ? "#f44336" : "#fff";
+    persistVideos();
+    metaDiv.textContent = `${v.likes} likes · GalaxyTube`;
+  }
+
+  /* ---------- Rendering ---------- */
+  const EMPTY_MSG = {
+    home: "No videos yet.",
+    subs: "No videos from creators you subscribed to.",
+    channel: "You haven't uploaded any videos yet.",
+  };
+
+  function renderEmpty() {
+    dom.feed.replaceChildren(
+      el("div", { class: "videoCard" },
+        el("div", { class: "placeholder", text: EMPTY_MSG[state.view] ?? "No videos yet." })
+      )
+    );
+    stopAllVideos();
+  }
+
+  function buildCommentRow(user, text) {
+    return el("div", { class: "commentRow", text: `@${user}: ${text}` });
+  }
+
+  function renderVideoCard(v) {
+    const pauseOverlay = el("div", { class: "pauseOverlay", text: "⏸" });
+    const vid = el("video", { src: v.url, loop: true, muted: false, controls: false, playsInline: true });
+
+    vid.addEventListener("click", () => {
+      if (vid.paused) { play(vid); pauseOverlay.style.display = "none"; }
+      else { vid.pause(); pauseOverlay.style.display = "flex"; }
+    });
+    pauseOverlay.addEventListener("click", () => { play(vid); pauseOverlay.style.display = "none"; });
+
+    const metaDiv = el("div", { class: "metaRow", text: `${v.likes} likes · GalaxyTube` });
+
+    // Subscribe button
+    const subBtn = el("span", {
+      class: "subscribeBtn" + (isSubscribed(v.creator) ? " subscribed" : ""),
+      text: isSubscribed(v.creator) ? "Subscribed" : "Subscribe",
+      on: {
+        click: () => {
+          if (!state.currentUser) { dom.authOverlay.style.display = "flex"; return; }
+          toggleSubscription(v.creator);
+          subBtn.textContent = isSubscribed(v.creator) ? "Subscribed" : "Subscribe";
+          subBtn.classList.toggle("subscribed", isSubscribed(v.creator));
+        },
+      },
+    });
+
+    // Comments
+    const commentsList = el("div", { style: { marginTop: "10px" } });
+    v.comments.forEach((c) => commentsList.append(buildCommentRow(c.user, c.text)));
+
+    const commentBox = el("input", {
+      placeholder: "Add a comment...",
+      style: {
+        width: "70%", marginTop: "6px", padding: "6px 10px", borderRadius: "6px",
+        border: "1px solid #333", background: "rgba(0,0,0,0.6)", color: "#fff",
+      },
+    });
+    const commentBtn = el("button", {
+      text: "Post",
+      style: {
+        marginLeft: "6px", padding: "6px 10px", borderRadius: "999px",
+        border: "none", background: "#7df9ff", color: "#000", cursor: "pointer",
+      },
+      on: {
+        click: () => {
+          if (!state.currentUser) { dom.authOverlay.style.display = "flex"; return; }
+          const text = commentBox.value.trim();
+          if (!text) return;
+          v.comments.push({ user: state.currentUser, text });
+          persistVideos();
+          commentsList.append(buildCommentRow(state.currentUser, text));
+          commentBox.value = "";
+        },
+      },
+    });
+
+    const info = el("div", { class: "info" },
+      el("div", { class: "creatorName", text: "@" + v.creator }),
+      el("div", { class: "caption", text: v.caption }),
+      metaDiv,
+      subBtn,
+      commentBox,
+      commentBtn,
+      commentsList
+    );
+
+    const card = el("div", { class: "videoCard" },
+      el("div", { class: "videoWrapper" }, vid),
+      pauseOverlay,
+      info
+    );
+
+    // Action rail (only when logged in)
+    if (state.currentUser) {
+      const upIcon = el("div", { text: "👍", style: { color: v.likedBy === state.currentUser ? "#4caf50" : "#fff" } });
+      const downIcon = el("div", { text: "👎", style: { color: v.dislikedBy === state.currentUser ? "#f44336" : "#fff" } });
+
+      const upBtn = el("div", { class: "actionBtn", on: { click: () => setReaction(v, "like", upIcon, downIcon, metaDiv) } }, upIcon);
+      const downBtn = el("div", { class: "actionBtn", on: { click: () => setReaction(v, "dislike", upIcon, downIcon, metaDiv) } }, downIcon);
+      const avatarBtn = el("div", { class: "actionBtn" }, el("div", { class: "creatorAvatar" }));
+
+      card.append(el("div", { class: "actions" }, avatarBtn, upBtn, downBtn));
+    }
+
+    return card;
+  }
+
+  function renderFeed() {
+    const list = getFilteredVideos();
+    if (!list.length) return renderEmpty();
+
+    dom.feed.replaceChildren(...list.map(renderVideoCard));
+
+    // Autoplay the first card once laid out.
+    requestAnimationFrame(() => {
+      const first = dom.feed.querySelector(".videoCard");
+      if (!first) return;
+      first.scrollIntoView({ behavior: "instant", block: "start" });
+      play(first.querySelector("video"));
+    });
+  }
+
+  /* ---------- View switching ---------- */
+  function setView(view) {
+    state.view = view;
+    document.querySelectorAll(".sideItem").forEach((item) =>
+      item.classList.toggle("active", item.dataset.view === view)
+    );
+    renderFeed();
+  }
+
+  /* ---------- Auth ---------- */
+  function authenticate(user, pass, createIfMissing) {
+    const u = user.trim(), p = pass.trim();
+    if (!u || !p) return false;
+    if (createIfMissing) {
+      store.set(KEYS.cred(u), p);
+    } else if (store.raw(KEYS.cred(u)) !== p) {
+      return false;
+    }
+    state.currentUser = u;
+    store.set(KEYS.user, u);
+    dom.authOverlay.style.display = "none";
+    updateUserLabel();
+    renderFeed();
+    return true;
+  }
+
+  document.getElementById("authLogin").onclick = () => {
+    if (!authenticate(dom.authUser.value, dom.authPass.value, false)) {
+      // silently ignore invalid credentials (matches original behavior)
+    }
+  };
+  document.getElementById("authCreate").onclick = () => {
+    authenticate(dom.authUser.value, dom.authPass.value, true);
+  };
+
+  /* ---------- Sidebar ---------- */
+  document.querySelectorAll(".sideItem").forEach((item) => {
+    item.onclick = () => {
+      const view = item.dataset.view;
+      if (view === "upload") {
+        if (!state.currentUser) { dom.authOverlay.style.display = "flex"; return; }
+        dom.uploadOverlay.style.display = "flex";
+        return;
+      }
+      if (view === "logout") {
+        state.currentUser = null;
+        localStorage.removeItem(KEYS.user);
+        updateUserLabel();
+        setView("home");
+        stopAllVideos();
+        return;
+      }
+      setView(view);
+    };
+  });
+
+  /* ---------- Upload ---------- */
+  document.getElementById("uploadCancel").onclick = () => (dom.uploadOverlay.style.display = "none");
+
+  document.getElementById("uploadSubmit").onclick = () => {
+    if (!state.currentUser) return;
+    const file = dom.uploadFile.files[0];
+    const caption = dom.uploadCaption.value.trim();
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.videos.unshift({
+        url: reader.result,
+        creator: state.currentUser,
+        caption,
+        likes: 0,
+        likedBy: null,
+        dislikedBy: null,
+        comments: [],
+      });
+      persistVideos();
+
+      dom.uploadOverlay.style.display = "none";
+      dom.uploadFile.value = "";
+      dom.uploadCaption.value = "";
+
+      setView("home");
+      setTimeout(() => {
+        const first = dom.feed.querySelector(".videoCard");
+        if (first) {
+          first.scrollIntoView({ behavior: "smooth", block: "start" });
+          play(first.querySelector("video"));
+        }
+      }, 200);
+
+      alert("Uploaded successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  /* ---------- Search (debounced) ---------- */
+  let searchTimer = null;
+  dom.searchBar.oninput = () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderFeed, 150);
+  };
+
+  /* ---------- Boot ---------- */
+  updateUserLabel();
+  renderFeed();
+})();
+</script>
+
+</body>
+</html>
